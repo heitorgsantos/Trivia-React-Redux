@@ -2,8 +2,15 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { MD5 } from 'crypto-js';
+import { MdSettings } from 'react-icons/md';
+
+import Button from '../../components/Button';
+import Input from '../../components/Input';
 
 import { fetchToken, setGravatar, setPlayerData } from '../../redux/actions';
+import { fetchCategoriesThunk } from '../../redux/actions/questionActions';
+
+import logo from '../../assets/logo.png';
 
 import './style.css';
 
@@ -23,8 +30,17 @@ class Login extends Component {
     this.getGravatar = this.getGravatar.bind(this);
   }
 
+  componentDidMount() {
+    const { getCategories } = this.props;
+
+    getCategories();
+  }
+
   getGravatar(email) {
-    const gravatarHash = MD5(email).toString();
+    const gravatarHash = MD5(email)
+      .toString()
+      .toLowerCase()
+      .trim();
     const gravatarEmail = `https://www.gravatar.com/avatar/${gravatarHash}`;
     return gravatarEmail;
   }
@@ -49,19 +65,7 @@ class Login extends Component {
     const gravatarEmail = this.getGravatar(email);
     setGravatarToState(gravatarEmail);
     setPlayerToState(name, email);
-    const playerDataString = JSON.stringify({
-      player: {
-        name,
-        assertions: 0,
-        score: 0,
-        gravatarEmail,
-      },
-    });
-    // const rankingDataString = JSON.stringify([
-    //   { name, score: 10, picture: gravatarEmail },
-    // ]);
-    // window.localStorage.setItem('ranking', rankingDataString);
-    window.localStorage.setItem('state', playerDataString);
+
     window.localStorage.setItem('token', token);
     history.push('/game');
   }
@@ -71,44 +75,38 @@ class Login extends Component {
     const { history } = this.props;
 
     return (
-      <div>
+      <div className="login-section">
+        <img src={ logo } alt="Trivia" style={ { width: '29em' } } />
         <form className="login-form">
-          <input
-            data-testid="input-player-name"
-            data-validation="validName"
-            placeholder="Nome"
+          <Input
+            placeholder="Name"
             type="text"
+            validation="validName"
             name="name"
             value={ name }
             onChange={ this.handleChange }
           />
 
-          <input
-            data-testid="input-gravatar-email"
-            data-validation="validEmail"
+          <Input
             placeholder="Email"
             type="email"
+            validation="validEmail"
             name="email"
             value={ email }
             onChange={ this.handleChange }
           />
 
-          <button
-            data-testid="btn-play"
+          <Button
             type="submit"
             disabled={ !validName || !validEmail }
             onClick={ this.handleClick }
-          >
-            Jogar
-          </button>
+            text="Play"
+            color={ !validName || !validEmail ? '#8b8b8b' : undefined }
+          />
 
-          <button
-            data-testid="btn-settings"
-            type="button"
-            onClick={ () => history.push('/settings') }
-          >
-            Configurações
-          </button>
+          <div className="settings-button">
+            <MdSettings onClick={ () => history.push('/settings') } />
+          </div>
         </form>
       </div>
     );
@@ -123,6 +121,7 @@ Login.propTypes = {
   setGravatarToState: PropTypes.func.isRequired,
   setPlayerToState: PropTypes.func.isRequired,
   token: PropTypes.string.isRequired,
+  getCategories: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = (state) => ({
@@ -133,6 +132,7 @@ const mapDispatchToProps = (dispatch) => ({
   fetch: () => dispatch(fetchToken()),
   setGravatarToState: (gravatar) => dispatch(setGravatar(gravatar)),
   setPlayerToState: (name, email) => dispatch(setPlayerData(name, email)),
+  getCategories: () => dispatch(fetchCategoriesThunk()),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Login);
